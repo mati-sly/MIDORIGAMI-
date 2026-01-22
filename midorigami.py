@@ -15,6 +15,7 @@ ctk.set_default_color_theme("green")
 # Archivos de configuración
 CONFIG_FILE = os.path.expanduser("~/.midorigami_config.json")
 FAVORITES_FILE = os.path.expanduser("~/.midorigami_favs.json")
+FEHBG_FILE = os.path.expanduser("~/.fehbg") # Archivo que restaura los fondos
 
 # --- DICCIONARIO DE IDIOMAS ---
 TRANSLATIONS = {
@@ -44,7 +45,7 @@ TRANSLATIONS = {
         "msg_missing_title": "Faltan Imágenes",
         "msg_missing_body": "Falta configurar:\n{}",
         "msg_success_title": "Éxito",
-        "msg_success_body": "Wallpapers aplicados.",
+        "msg_success_body": "Wallpapers aplicados y guardados para el inicio.",
         "msg_error_title": "Error",
         "monitors_section": "Monitores / モニター"
     },
@@ -74,7 +75,7 @@ TRANSLATIONS = {
         "msg_missing_title": "Images Missing",
         "msg_missing_body": "Please configure:\n{}",
         "msg_success_title": "Success",
-        "msg_success_body": "Wallpapers applied successfully.",
+        "msg_success_body": "Wallpapers applied and saved for startup.",
         "msg_error_title": "Error",
         "monitors_section": "Displays"
     },
@@ -104,17 +105,15 @@ TRANSLATIONS = {
         "msg_missing_title": "画像不足",
         "msg_missing_body": "設定が必要です:\n{}",
         "msg_success_title": "成功",
-        "msg_success_body": "壁紙が適用されました。",
+        "msg_success_body": "壁紙が適用され、起動時に保存されました。",
         "msg_error_title": "エラー",
         "monitors_section": "モニター"
     }
 }
 
-# Variable global para el idioma actual
 CURRENT_LANG = "es"
 
 def tr(key):
-    """Función helper para traducir"""
     return TRANSLATIONS.get(CURRENT_LANG, TRANSLATIONS["es"]).get(key, key)
 
 class WallpaperPicker(ctk.CTkToplevel):
@@ -124,14 +123,10 @@ class WallpaperPicker(ctk.CTkToplevel):
         self.folder_mode = folder_mode
         self.current_dir = start_dir if os.path.isdir(start_dir) else os.path.expanduser("~")
         
-        # Título dinámico
-        title_key = "confirm_folder" if folder_mode else "window_title"
-        self.title(tr("window_title")) # Usamos el título genérico o podrías hacer uno específico
+        self.title(tr("window_title")) 
         self.geometry("1100x700")
-        
         self.favorites = self.load_favorites()
 
-        # Layout
         self.grid_columnconfigure(1, weight=1) 
         self.grid_columnconfigure(2, weight=2) 
         self.grid_rowconfigure(1, weight=1)
@@ -187,9 +182,7 @@ class WallpaperPicker(ctk.CTkToplevel):
         btn_state = "normal" if folder_mode else "disabled"
         
         self.select_btn = ctk.CTkButton(
-            self.bottom_bar, text=btn_text, 
-            state=btn_state, 
-            command=self.confirm_selection,
+            self.bottom_bar, text=btn_text, state=btn_state, command=self.confirm_selection,
             fg_color="#3498db" if folder_mode else "#2ecc71"
         )
         self.select_btn.pack(side="right", padx=10)
@@ -203,7 +196,6 @@ class WallpaperPicker(ctk.CTkToplevel):
         try: self.lift(); self.grab_set()
         except: pass
 
-    # --- Logic ---
     def load_favorites(self):
         if os.path.exists(FAVORITES_FILE):
             try:
@@ -286,7 +278,7 @@ class MonitorFrame(ctk.CTkFrame):
 
         self.grid_columnconfigure(0, weight=1)
 
-        self.label = ctk.CTkLabel(self, text="", font=("Roboto", 12, "bold")) # Texto se setea dinámicamente
+        self.label = ctk.CTkLabel(self, text="", font=("Roboto", 12, "bold")) 
         self.label.grid(row=0, column=0, pady=5, padx=5)
 
         self.preview_btn = ctk.CTkButton(
@@ -295,7 +287,7 @@ class MonitorFrame(ctk.CTkFrame):
         )
         self.preview_btn.grid(row=1, column=0, pady=10, padx=10, sticky="ew")
 
-        self.update_texts() # Setear textos iniciales
+        self.update_texts() 
         if self.selected_image_path: self.update_preview(self.selected_image_path)
 
     def update_texts(self):
@@ -325,15 +317,11 @@ class MonitorFrame(ctk.CTkFrame):
 class MidoriGamiApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        
-        # 1. Detectar idioma inicial
         global CURRENT_LANG
         self.config_data = self.load_config()
         
-        # Prioridad: 1. Config guardada, 2. Sistema operativo, 3. Inglés
         saved_lang = self.config_data.get("language")
-        if saved_lang in TRANSLATIONS:
-            CURRENT_LANG = saved_lang
+        if saved_lang in TRANSLATIONS: CURRENT_LANG = saved_lang
         else:
             sys_lang = locale.getdefaultlocale()[0]
             if sys_lang and sys_lang.startswith('ja'): CURRENT_LANG = 'ja'
@@ -343,7 +331,6 @@ class MidoriGamiApp(ctk.CTk):
         self.geometry("1100x750")
         self.global_default_dir = None 
         
-        # Icono
         self.sidebar_icon = None
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -358,7 +345,7 @@ class MidoriGamiApp(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # --- SIDEBAR ---
+        # Sidebar
         self.sidebar = ctk.CTkFrame(self, width=260, corner_radius=0) 
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         self.sidebar.grid_rowconfigure(1, weight=1) 
@@ -371,7 +358,7 @@ class MidoriGamiApp(ctk.CTk):
         self.subtitle_label = ctk.CTkLabel(self.header_frame, text="", font=("Roboto", 12), text_color="gray")
         self.subtitle_label.pack()
 
-        # Rutas
+        # Paths
         self.paths_frame = ctk.CTkScrollableFrame(self.sidebar, label_text="")
         self.paths_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=10)
         
@@ -385,7 +372,6 @@ class MidoriGamiApp(ctk.CTk):
         self.apply_btn = ctk.CTkButton(self.footer_frame, text="", command=self.apply_wallpapers, fg_color="#2ecc71", hover_color="#27ae60", font=("Roboto", 16, "bold"), height=50)
         self.apply_btn.pack(padx=20, pady=5, fill="x")
 
-        # SELECTOR DE IDIOMA
         self.lang_var = ctk.StringVar(value=self.get_lang_display_name(CURRENT_LANG))
         self.lang_menu = ctk.CTkOptionMenu(
             self.footer_frame, 
@@ -403,18 +389,49 @@ class MidoriGamiApp(ctk.CTk):
         self.credits_label = ctk.CTkLabel(self.footer_frame, text="", font=("Roboto", 10), text_color="gray")
         self.credits_label.pack()
 
-        # Main Area
         self.main_area = ctk.CTkScrollableFrame(self, label_text="")
         self.main_area.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
 
         self.monitor_frames = []
         
-        # Inicializar textos y cargar
         self.update_ui_language() 
         self.load_sidebar_paths() 
         self.load_monitors()
 
-    # --- GESTIÓN DE IDIOMA ---
+    # --- NUEVA FUNCIÓN: AUTO-START ---
+    def ensure_autostart(self):
+        """Crea el archivo .desktop para que Linux ejecute .fehbg al inicio"""
+        autostart_dir = os.path.expanduser("~/.config/autostart")
+        desktop_file = os.path.join(autostart_dir, "midorigami_restore.desktop")
+        
+        # Si ya existe, no hacemos nada (para ahorrar escritura)
+        if os.path.exists(desktop_file):
+            return
+
+        if not os.path.exists(autostart_dir):
+            try: os.makedirs(autostart_dir)
+            except: return
+
+        # Contenido del archivo .desktop
+        content = f"""[Desktop Entry]
+Type=Application
+Name=MidoriGami Restore
+Comment=Restaurar fondos de pantalla
+Exec=sh {FEHBG_FILE}
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+"""
+        try:
+            with open(desktop_file, "w") as f:
+                f.write(content)
+            # Asegurar permisos de ejecución para fehbg
+            if os.path.exists(FEHBG_FILE):
+                os.chmod(FEHBG_FILE, 0o755)
+        except Exception as e:
+            print(f"Error creando autostart: {e}")
+
+    # --- RESTO DE FUNCIONES ---
     def get_lang_display_name(self, code):
         if code == 'es': return "Español"
         if code == 'ja': return "日本語"
@@ -425,15 +442,11 @@ class MidoriGamiApp(ctk.CTk):
         if choice == "Español": CURRENT_LANG = "es"
         elif choice == "日本語": CURRENT_LANG = "ja"
         else: CURRENT_LANG = "en"
-        
         self.update_ui_language()
-        
-        # Guardar preferencia
         self.config_data["language"] = CURRENT_LANG
         self.save_config_data()
 
     def update_ui_language(self):
-        """Actualiza todos los textos de la interfaz al vuelo"""
         self.title(tr("window_title"))
         self.subtitle_label.configure(text=tr("app_subtitle"))
         self.paths_frame.configure(label_text=tr("shortcuts_title"))
@@ -442,12 +455,8 @@ class MidoriGamiApp(ctk.CTk):
         self.theme_switch.configure(text=tr("dark_mode") if self.theme_switch.get() else tr("light_mode"))
         self.credits_label.configure(text=tr("dev_credits"))
         self.main_area.configure(label_text=tr("monitors_section"))
-        
-        # Actualizar monitores
-        for frame in self.monitor_frames:
-            frame.update_texts()
+        for frame in self.monitor_frames: frame.update_texts()
 
-    # --- RESTO DE FUNCIONES ---
     def load_favorites(self):
         if os.path.exists(FAVORITES_FILE):
             try:
@@ -493,21 +502,17 @@ class MidoriGamiApp(ctk.CTk):
         except: pass
 
     def save_config_wallpapers(self):
-        # Guardamos wallpapers en la misma estructura o separada, aquí actualizamos el dict principal
         monitor_data = {}
         for frame in self.monitor_frames:
             if frame.selected_image_path:
                 monitor_data[frame.monitor_name] = frame.selected_image_path
-        
         self.config_data["wallpapers"] = monitor_data
         self.save_config_data()
 
     def load_monitors(self):
         try: monitors = screeninfo.get_monitors()
         except: monitors = []
-        
         wallpapers = self.config_data.get("wallpapers", {})
-        
         for i, m in enumerate(monitors):
             saved = wallpapers.get(m.name)
             frame = MonitorFrame(self.main_area, m.name, m.width, m.height, i, self, initial_image=saved)
@@ -534,8 +539,16 @@ class MidoriGamiApp(ctk.CTk):
 
         try:
             subprocess.run(command + images_args)
-            with open(os.path.expanduser("~/.fehbg"), "w") as f: f.write(" ".join(command + images_args))
+            # Guardamos el comando en .fehbg
+            with open(FEHBG_FILE, "w") as f: 
+                f.write("#!/bin/sh\n" + " ".join(command + images_args)) # Añadimos shebang por seguridad
+            
+            # Guardamos config
             self.save_config_wallpapers()
+            
+            # --- MAGIA: CREAR ENTRADA DE AUTOARRANQUE ---
+            self.ensure_autostart()
+            
             CTkMessagebox(master=self, title=tr("msg_success_title"), message=tr("msg_success_body"), icon="check")
         except Exception as e:
             CTkMessagebox(master=self, title=tr("msg_error_title"), message=str(e), icon="cancel")
