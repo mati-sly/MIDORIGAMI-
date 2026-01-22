@@ -141,5 +141,5 @@ Si tienes ideas para mejorar el **Mini-Nemo** o añadir soporte para otros backe
 <p align="center">
   Dev by <strong>Matías</strong> © 2026
 </p>
-```
+
 
