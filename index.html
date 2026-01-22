@@ -58,7 +58,7 @@
         }
         .cute-card:hover { transform: translateY(-5px); }
 
-        /* NUEVO ESTILO: Marco de Foto (Reemplaza al efecto líquido) */
+        /* NUEVO ESTILO: Marco de Foto (Slider) */
         .photo-frame {
             background-color: white;
             padding: 12px;
@@ -161,20 +161,45 @@
                 <a href="#install" class="btn-ghibli py-3 px-8 text-lg font-bold flex items-center justify-center gap-2">
                     <i class="fa-solid fa-download"></i> Instalar
                 </a>
-                <!-- Botón actualizado al Repo -->
                 <a href="https://github.com/mati-sly/MIDORIGAMI-" target="_blank" class="btn-secondary py-3 px-8 text-lg font-bold flex items-center justify-center gap-2">
                     <i class="fa-brands fa-github-alt"></i> Ir al Repositorio
                 </a>
             </div>
 
-            <!-- IMAGEN PRINCIPAL (Nuevo Marco Estético) -->
+            <!-- SLIDER PRINCIPAL -->
             <div class="relative max-w-5xl mx-auto mt-8 px-4">
-                <!-- Fondo decorativo detrás de la imagen -->
+                <!-- Fondo decorativo detrás de la foto -->
                 <div class="photo-backdrop"></div>
                 
-                <div class="photo-frame">
-                    <img src="captura1.png" alt="Interfaz de MidoriGami" class="w-full h-auto rounded-lg border border-gray-100" onerror="this.src='https://via.placeholder.com/1000x600/e0f7fa/2b5c3a?text=Captura+de+MidoriGami'">
-                    <div class="text-center mt-2 text-gray-400 text-sm handwritten">Vista de la interfaz principal 🍃</div>
+                <div class="photo-frame group">
+                    <!-- Contenedor de Imágenes -->
+                    <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+                        <div id="slider-track" class="w-full h-full relative">
+                            <!-- Slide 1 -->
+                            <img src="captura1.png" data-caption="Vista de la interfaz principal 🍃" class="slider-image absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-700 opacity-100 z-10" alt="Main UI">
+                            <!-- Slide 2 -->
+                            <img src="captura2.png" data-caption="Explorador visual Mini-Nemo 📂" class="slider-image absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-700 opacity-0 z-0" alt="File Picker">
+                        </div>
+
+                        <!-- Flechas de navegación (Aparecen en Hover) -->
+                        <button onclick="changeSlide(-1)" class="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#2b5c3a] w-10 h-10 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 cursor-pointer">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button onclick="changeSlide(1)" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#2b5c3a] w-10 h-10 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 cursor-pointer">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+
+                        <!-- Indicadores (Puntos) -->
+                        <div class="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                            <button onclick="goToSlide(0)" class="slider-dot w-2 h-2 rounded-full bg-white shadow transition-all duration-300 w-6"></button>
+                            <button onclick="goToSlide(1)" class="slider-dot w-2 h-2 rounded-full bg-white/50 shadow transition-all duration-300 hover:bg-white hover:w-4"></button>
+                        </div>
+                    </div>
+                    
+                    <!-- Leyenda dinámica -->
+                    <div id="slider-caption" class="text-center mt-2 text-gray-400 text-sm handwritten font-bold transition-all duration-300">
+                        Vista de la interfaz principal 🍃
+                    </div>
                 </div>
             </div>
         </div>
@@ -184,7 +209,6 @@
     <section class="py-20 bg-white/30 backdrop-blur-sm">
         <div class="px-4 mx-auto max-w-screen-xl">
             <div class="grid gap-8 md:grid-cols-3">
-                <!-- Card 1 -->
                 <div class="cute-card p-8 text-center">
                     <div class="w-16 h-16 mx-auto mb-6 bg-[#e8f5e9] rounded-full flex items-center justify-center text-[#2ecc71] text-3xl">
                         <i class="fa-solid fa-layer-group"></i>
@@ -192,8 +216,6 @@
                     <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]">Multi-Monitor</h3>
                     <p class="text-gray-600">Control total sobre cada pantalla. Fondos diferentes para ambientes diferentes.</p>
                 </div>
-                
-                <!-- Card 2 -->
                 <div class="cute-card p-8 text-center">
                     <div class="w-16 h-16 mx-auto mb-6 bg-[#e3f2fd] rounded-full flex items-center justify-center text-[#2196f3] text-3xl">
                         <i class="fa-regular fa-folder-open"></i>
@@ -201,8 +223,6 @@
                     <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]">Mini-Nemo</h3>
                     <p class="text-gray-600">Explorador visual integrado. Previsualiza tus imágenes antes de elegirlas.</p>
                 </div>
-                
-                <!-- Card 3 -->
                 <div class="cute-card p-8 text-center">
                     <div class="w-16 h-16 mx-auto mb-6 bg-[#fff3e0] rounded-full flex items-center justify-center text-[#ff9800] text-3xl">
                         <i class="fa-solid fa-star"></i>
@@ -261,7 +281,7 @@ python midorigami.py</code></pre>
         </div>
     </footer>
 
-    <!-- SCRIPT (Hojas cayendo) -->
+    <!-- SCRIPT (Funcionalidad Completa) -->
     <script>
         function copyCode() {
             const code = document.getElementById('install-code').innerText;
@@ -271,6 +291,64 @@ python midorigami.py</code></pre>
                 setTimeout(() => feedback.style.opacity = '0', 2000);
             });
         }
+
+        /* --- SISTEMA DE SLIDER (CARRUSEL) --- */
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slider-image');
+        const dots = document.querySelectorAll('.slider-dot');
+        const captionEl = document.getElementById('slider-caption');
+        let sliderInterval;
+
+        function updateSlider() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.remove('opacity-0', 'z-0');
+                    slide.classList.add('opacity-100', 'z-10');
+                    // Actualizar Caption
+                    captionEl.style.opacity = '0';
+                    setTimeout(() => {
+                        captionEl.textContent = slide.getAttribute('data-caption');
+                        captionEl.style.opacity = '1';
+                    }, 300);
+                } else {
+                    slide.classList.remove('opacity-100', 'z-10');
+                    slide.classList.add('opacity-0', 'z-0');
+                }
+            });
+
+            // Actualizar puntos
+            dots.forEach((dot, index) => {
+                if (index === currentSlide) {
+                    dot.classList.remove('bg-white/50', 'w-2', 'hover:w-4');
+                    dot.classList.add('bg-white', 'w-6');
+                } else {
+                    dot.classList.add('bg-white/50', 'w-2', 'hover:w-4');
+                    dot.classList.remove('bg-white', 'w-6');
+                }
+            });
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide >= slides.length) currentSlide = 0;
+            if (currentSlide < 0) currentSlide = slides.length - 1;
+            updateSlider();
+            resetTimer();
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlider();
+            resetTimer();
+        }
+
+        function resetTimer() {
+            clearInterval(sliderInterval);
+            sliderInterval = setInterval(() => changeSlide(1), 5000); // Cambio cada 5s
+        }
+
+        // Iniciar Slider
+        resetTimer();
 
         /* --- SISTEMA DE HOJAS FLOTANTES --- */
         const canvas = document.getElementById('nature-canvas');
@@ -293,18 +371,15 @@ python midorigami.py</code></pre>
                 this.color = colors[Math.floor(Math.random() * colors.length)];
                 this.opacity = Math.random() * 0.5 + 0.3;
             }
-
             update() {
                 this.x += this.speedX + Math.sin(this.angle) * 0.2;
                 this.y += this.speedY;
                 this.angle += this.spin;
-
                 if (this.y > canvas.height) {
                     this.y = -20;
                     this.x = Math.random() * canvas.width;
                 }
             }
-
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
