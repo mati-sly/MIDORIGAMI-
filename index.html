@@ -5,18 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MidoriGami 🌿 | Tu rincón digital</title>
     
-    <!-- FAVICON (Icono de la pestaña) -->
     <link rel="icon" type="image/png" href="icono.png">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -33,7 +29,6 @@
             background-color: var(--bg-cream);
             color: var(--deep-forest);
             overflow-x: hidden;
-            /* Textura sutil de papel */
             background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238cb369' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
 
@@ -48,7 +43,7 @@
             background: linear-gradient(180deg, #e0f7fa 0%, #f9f7f2 100%); 
         }
 
-        /* Tarjetas Estilo "Carta" */
+        /* Tarjetas */
         .cute-card {
             background: rgba(255, 255, 255, 0.9);
             border-radius: 24px;
@@ -58,23 +53,18 @@
         }
         .cute-card:hover { transform: translateY(-5px); }
 
-        /* NUEVO ESTILO: Marco de Foto (Slider) */
+        /* Marco de Foto */
         .photo-frame {
             background-color: white;
             padding: 12px;
             border-radius: 16px;
             box-shadow: 0 20px 40px rgba(43, 92, 58, 0.15);
-            transform: rotate(-2deg); /* Ligera rotación natural */
+            transform: rotate(-2deg);
             transition: transform 0.5s ease;
             position: relative;
         }
-        
-        .photo-frame:hover {
-            transform: rotate(0deg) scale(1.02);
-            z-index: 10;
-        }
+        .photo-frame:hover { transform: rotate(0deg) scale(1.02); z-index: 10; }
 
-        /* Decoración detrás de la foto */
         .photo-backdrop {
             position: absolute;
             top: -20px; left: -20px; right: -20px; bottom: -20px;
@@ -85,7 +75,7 @@
             opacity: 0.6;
         }
 
-        /* Botones */
+        /* Botones Generales */
         .btn-ghibli {
             background-color: var(--soft-green);
             color: white;
@@ -93,10 +83,7 @@
             box-shadow: 0 4px 15px rgba(140, 179, 105, 0.4);
             transition: all 0.3s ease;
         }
-        .btn-ghibli:hover {
-            background-color: var(--deep-forest);
-            transform: translateY(-2px);
-        }
+        .btn-ghibli:hover { background-color: var(--deep-forest); transform: translateY(-2px); }
 
         .btn-secondary {
             background-color: white;
@@ -105,98 +92,105 @@
             border-radius: 50px;
             transition: all 0.3s ease;
         }
-        .btn-secondary:hover {
-            background-color: #f0fff4;
-            transform: translateY(-2px);
+        .btn-secondary:hover { background-color: #f0fff4; transform: translateY(-2px); }
+
+        /* --- ESTILOS PARA LAS BANDERAS --- */
+        .lang-btn {
+            font-size: 1.5rem;
+            filter: grayscale(100%); /* Gris por defecto */
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        .lang-btn:hover, .lang-btn.active {
+            filter: grayscale(0%); /* Color al pasar mouse o seleccionar */
+            transform: scale(1.2);
         }
 
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--soft-green); border-radius: 10px; }
     </style>
 </head>
 <body class="selection:bg-[#a3cef1] selection:text-[#2b5c3a]">
 
-    <!-- CANVAS PARA HOJAS FLOTANTES -->
     <canvas id="nature-canvas"></canvas>
 
-    <!-- NAVBAR -->
     <nav class="fixed w-full z-50 top-0 start-0 py-4 transition-all duration-300 bg-white/70 backdrop-blur-md shadow-sm">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-6">
             <a href="#" class="flex items-center space-x-3 group">
-                <!-- Icono animado -->
                 <div class="relative w-10 h-10 flex justify-center items-center bg-green-100 rounded-full overflow-hidden border border-green-200">
                     <img src="icono.png" class="w-full h-full object-cover" alt="Logo">
                 </div>
                 <span class="self-center text-2xl font-bold tracking-tight text-[#2b5c3a]">Midori<span class="text-[#8cb369]">Gami</span></span>
             </a>
-            <div class="flex space-x-4">
-                <a href="https://github.com/mati-sly/MIDORIGAMI-" target="_blank" class="text-[#2b5c3a] hover:text-[#8cb369] transition-colors text-2xl" title="Ver en GitHub">
+            
+            <div class="flex items-center space-x-4">
+                <div class="flex space-x-1 mr-4 bg-white/50 px-3 py-1 rounded-full border border-green-100">
+                    <button onclick="setLang('es')" class="lang-btn active" id="btn-es" title="Español (Chile)">🇨🇱</button>
+                    <button onclick="setLang('en')" class="lang-btn" id="btn-en" title="English (USA)">🇺🇸</button>
+                    <button onclick="setLang('ja')" class="lang-btn" id="btn-ja" title="日本語">🇯🇵</button>
+                </div>
+
+                <a href="https://github.com/mati-sly/MIDORIGAMI-" target="_blank" class="text-[#2b5c3a] hover:text-[#8cb369] transition-colors text-2xl" title="GitHub">
                     <i class="fa-brands fa-github"></i>
                 </a>
             </div>
         </div>
     </nav>
 
-    <!-- HERO SECTION -->
     <section class="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
         <div class="px-4 mx-auto max-w-screen-xl text-center z-10 relative">
             
-            <!-- Badge cute -->
             <div class="inline-flex items-center px-4 py-2 mb-8 text-sm text-[#2b5c3a] bg-green-100 rounded-full border border-green-200 shadow-sm handwritten font-bold text-lg animate-bounce">
-                <i class="fa-solid fa-leaf mr-2 text-green-500"></i> ¡Tu escritorio nunca se vio tan bien! 🌿
+                <i class="fa-solid fa-leaf mr-2 text-green-500"></i> <span id="hero-badge">¡Tu escritorio nunca se vio tan bien! 🌿</span>
             </div>
             
             <h1 class="mb-6 text-5xl font-extrabold text-[#2b5c3a] md:text-6xl lg:text-7xl">
-                Naturaleza digital <br>
-                <span class="text-[#8cb369]">para tus monitores</span>
+                <span id="hero-title-1">Naturaleza digital</span> <br>
+                <span class="text-[#8cb369]" id="hero-title-2">para tus monitores</span>
             </h1>
             
-            <p class="mb-10 text-lg font-medium text-gray-600 lg:text-xl sm:px-16 xl:px-48 handwritten text-2xl">
+            <p class="mb-10 text-lg font-medium text-gray-600 lg:text-xl sm:px-16 xl:px-48 handwritten text-2xl" id="hero-desc">
                 Un gestor de fondos de pantalla simple, visual y relajante. <br>
                 Olvídate de la terminal, disfruta las vistas. ✨
             </p>
             
             <div class="flex flex-col mb-16 space-y-4 sm:flex-row sm:justify-center sm:space-y-0 sm:space-x-6">
                 <a href="#install" class="btn-ghibli py-3 px-8 text-lg font-bold flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-download"></i> Instalar
+                    <i class="fa-solid fa-download"></i> <span id="btn-install">Instalar</span>
                 </a>
                 <a href="https://github.com/mati-sly/MIDORIGAMI-" target="_blank" class="btn-secondary py-3 px-8 text-lg font-bold flex items-center justify-center gap-2">
-                    <i class="fa-brands fa-github-alt"></i> Ir al Repositorio
+                    <i class="fa-brands fa-github-alt"></i> <span id="btn-repo">Ir al Repositorio</span>
                 </a>
             </div>
 
-            <!-- SLIDER PRINCIPAL -->
             <div class="relative max-w-5xl mx-auto mt-8 px-4">
-                <!-- Fondo decorativo detrás de la foto -->
                 <div class="photo-backdrop"></div>
-                
                 <div class="photo-frame group">
-                    <!-- Contenedor de Imágenes -->
                     <div class="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
                         <div id="slider-track" class="w-full h-full relative">
-                            <!-- Slide 1 -->
-                            <img src="captura1.png" data-caption="Vista de la interfaz principal 🍃" class="slider-image absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-700 opacity-100 z-10" alt="Main UI">
-                            <!-- Slide 2 -->
-                            <img src="captura2.png" data-caption="Explorador visual Mini-Nemo 📂" class="slider-image absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-700 opacity-0 z-0" alt="File Picker">
+                            <img src="captura1.png" 
+                                 data-caption-es="Vista de la interfaz principal 🍃" 
+                                 data-caption-en="Main Interface View 🍃" 
+                                 data-caption-ja="メインインターフェイス 🍃"
+                                 class="slider-image absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-700 opacity-100 z-10" alt="UI">
+                            
+                            <img src="captura2.png" 
+                                 data-caption-es="Explorador visual Mini-Nemo 📂" 
+                                 data-caption-en="Mini-Nemo Visual Explorer 📂" 
+                                 data-caption-ja="Mini-Nemo ビジュアルエクスプローラー 📂"
+                                 class="slider-image absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-700 opacity-0 z-0" alt="Picker">
                         </div>
 
-                        <!-- Flechas de navegación (Aparecen en Hover) -->
-                        <button onclick="changeSlide(-1)" class="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#2b5c3a] w-10 h-10 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 cursor-pointer">
-                            <i class="fa-solid fa-chevron-left"></i>
-                        </button>
-                        <button onclick="changeSlide(1)" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#2b5c3a] w-10 h-10 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 cursor-pointer">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </button>
+                        <button onclick="changeSlide(-1)" class="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#2b5c3a] w-10 h-10 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 cursor-pointer"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="changeSlide(1)" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#2b5c3a] w-10 h-10 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 cursor-pointer"><i class="fa-solid fa-chevron-right"></i></button>
 
-                        <!-- Indicadores (Puntos) -->
                         <div class="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-                            <button onclick="goToSlide(0)" class="slider-dot w-2 h-2 rounded-full bg-white shadow transition-all duration-300 w-6"></button>
-                            <button onclick="goToSlide(1)" class="slider-dot w-2 h-2 rounded-full bg-white/50 shadow transition-all duration-300 hover:bg-white hover:w-4"></button>
+                            <button onclick="goToSlide(0)" class="slider-dot w-2 h-2 rounded-full bg-white shadow w-6"></button>
+                            <button onclick="goToSlide(1)" class="slider-dot w-2 h-2 rounded-full bg-white/50 shadow hover:bg-white"></button>
                         </div>
                     </div>
                     
-                    <!-- Leyenda dinámica -->
                     <div id="slider-caption" class="text-center mt-2 text-gray-400 text-sm handwritten font-bold transition-all duration-300">
                         Vista de la interfaz principal 🍃
                     </div>
@@ -205,42 +199,39 @@
         </div>
     </section>
 
-    <!-- CARACTERÍSTICAS -->
     <section class="py-20 bg-white/30 backdrop-blur-sm">
         <div class="px-4 mx-auto max-w-screen-xl">
+            <div class="text-center mb-16">
+                <h2 class="mb-4 text-4xl font-bold text-[#2b5c3a]" id="feat-title">Pequeños detalles mágicos</h2>
+                <p class="text-gray-500 text-xl handwritten" id="feat-desc">Hecho para que te sientas como en casa.</p>
+            </div>
+
             <div class="grid gap-8 md:grid-cols-3">
                 <div class="cute-card p-8 text-center">
-                    <div class="w-16 h-16 mx-auto mb-6 bg-[#e8f5e9] rounded-full flex items-center justify-center text-[#2ecc71] text-3xl">
-                        <i class="fa-solid fa-layer-group"></i>
-                    </div>
-                    <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]">Multi-Monitor</h3>
-                    <p class="text-gray-600">Control total sobre cada pantalla. Fondos diferentes para ambientes diferentes.</p>
+                    <div class="w-16 h-16 mx-auto mb-6 bg-[#e8f5e9] rounded-full flex items-center justify-center text-[#2ecc71] text-3xl"><i class="fa-solid fa-layer-group"></i></div>
+                    <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]" id="card-1-title">Multi-Monitor</h3>
+                    <p class="text-gray-600" id="card-1-desc">Control total sobre cada pantalla. Fondos diferentes para ambientes diferentes.</p>
                 </div>
                 <div class="cute-card p-8 text-center">
-                    <div class="w-16 h-16 mx-auto mb-6 bg-[#e3f2fd] rounded-full flex items-center justify-center text-[#2196f3] text-3xl">
-                        <i class="fa-regular fa-folder-open"></i>
-                    </div>
-                    <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]">Mini-Nemo</h3>
-                    <p class="text-gray-600">Explorador visual integrado. Previsualiza tus imágenes antes de elegirlas.</p>
+                    <div class="w-16 h-16 mx-auto mb-6 bg-[#e3f2fd] rounded-full flex items-center justify-center text-[#2196f3] text-3xl"><i class="fa-regular fa-folder-open"></i></div>
+                    <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]" id="card-2-title">Mini-Nemo</h3>
+                    <p class="text-gray-600" id="card-2-desc">Explorador visual integrado. Previsualiza tus imágenes antes de elegirlas.</p>
                 </div>
                 <div class="cute-card p-8 text-center">
-                    <div class="w-16 h-16 mx-auto mb-6 bg-[#fff3e0] rounded-full flex items-center justify-center text-[#ff9800] text-3xl">
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]">Favoritos</h3>
-                    <p class="text-gray-600">Guarda tus carpetas preferidas para acceder a ellas con un solo clic.</p>
+                    <div class="w-16 h-16 mx-auto mb-6 bg-[#fff3e0] rounded-full flex items-center justify-center text-[#ff9800] text-3xl"><i class="fa-solid fa-star"></i></div>
+                    <h3 class="mb-3 text-2xl font-bold text-[#2b5c3a]" id="card-3-title">Favoritos</h3>
+                    <p class="text-gray-600" id="card-3-desc">Guarda tus carpetas preferidas para acceder a ellas con un solo clic.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- INSTALACIÓN -->
     <section id="install" class="py-20 relative">
         <div class="px-4 mx-auto max-w-4xl relative z-10">
             <div class="cute-card p-8 md:p-12 border-t-8 border-t-[#8cb369]">
                 <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-[#2b5c3a] mb-2">🌱 Siembra el código</h2>
-                    <p class="text-gray-500 handwritten text-xl">Copia, pega y disfruta.</p>
+                    <h2 class="text-3xl font-bold text-[#2b5c3a] mb-2" id="install-title">🌱 Siembra el código</h2>
+                    <p class="text-gray-500 handwritten text-xl" id="install-desc">Copia, pega y disfruta.</p>
                 </div>
 
                 <div class="relative bg-[#2d3436] rounded-xl shadow-inner overflow-hidden text-left">
@@ -265,24 +256,103 @@ python midorigami.py</code></pre>
                     </div>
                 </div>
                 <div id="copy-feedback" class="text-center mt-4 text-[#8cb369] font-bold opacity-0 transition-opacity handwritten text-lg">
-                    ¡Copiado! Listo para plantar. 🍃
+                    ¡Copiado! 🍃
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- FOOTER -->
     <footer class="py-12 bg-white/50 border-t border-gray-100">
         <div class="text-center">
             <div class="inline-block p-2 rounded-full bg-white mb-4 shadow-sm">
                 <img src="icono.png" class="w-12 h-12 rounded-full" alt="Icono Footer">
             </div>
-            <p class="text-gray-500 handwritten text-lg mb-6">Desarrollado por <span class="text-[#2b5c3a] font-bold">Matías</span> © 2026</p>
+            <p class="text-gray-500 handwritten text-lg mb-6" id="footer-text">Desarrollado por <span class="text-[#2b5c3a] font-bold">Matías</span> © 2026</p>
         </div>
     </footer>
 
-    <!-- SCRIPT (Funcionalidad Completa) -->
     <script>
+        // --- DICCIONARIO DE TRADUCCIONES ---
+        const translations = {
+            es: {
+                "hero-badge": "¡Tu escritorio nunca se vio tan bien! 🌿",
+                "hero-title-1": "Naturaleza digital",
+                "hero-title-2": "para tus monitores",
+                "hero-desc": "Un gestor de fondos de pantalla simple, visual y relajante. <br> Olvídate de la terminal, disfruta las vistas. ✨",
+                "btn-install": "Instalar",
+                "btn-repo": "Ir al Repositorio",
+                "feat-title": "Pequeños detalles mágicos",
+                "feat-desc": "Hecho para que te sientas como en casa.",
+                "card-1-title": "Multi-Monitor",
+                "card-1-desc": "Control total sobre cada pantalla. Fondos diferentes para ambientes diferentes.",
+                "card-2-title": "Mini-Nemo",
+                "card-2-desc": "Explorador visual integrado. Previsualiza tus imágenes antes de elegirlas.",
+                "card-3-title": "Favoritos",
+                "card-3-desc": "Guarda tus carpetas preferidas para acceder a ellas con un solo clic.",
+                "install-title": "🌱 Siembra el código",
+                "install-desc": "Copia, pega y disfruta.",
+                "footer-text": 'Desarrollado por <span class="text-[#2b5c3a] font-bold">Matías</span> © 2026'
+            },
+            en: {
+                "hero-badge": "Your desktop never looked this good! 🌿",
+                "hero-title-1": "Digital nature",
+                "hero-title-2": "for your monitors",
+                "hero-desc": "A wallpaper manager crafted with love for Linux. <br> Visual, simple, and full of life. ✨",
+                "btn-install": "Install",
+                "btn-repo": "Repository",
+                "feat-title": "Small magical details",
+                "feat-desc": "Made to make you feel at home.",
+                "card-1-title": "Multi-Monitor",
+                "card-1-desc": "Total control over each screen. Different wallpapers for different vibes.",
+                "card-2-title": "Mini-Nemo",
+                "card-2-desc": "Integrated visual explorer. Preview your images big before choosing them.",
+                "card-3-title": "Favorites",
+                "card-3-desc": "Save your favorite folders to access them with a single click.",
+                "install-title": "🌱 Plant the code",
+                "install-desc": "Copy, paste, and enjoy.",
+                "footer-text": 'Developed by <span class="text-[#2b5c3a] font-bold">Matías</span> © 2026'
+            },
+            ja: {
+                "hero-badge": "デスクトップがこんなに素敵に！ 🌿",
+                "hero-title-1": "モニターに",
+                "hero-title-2": "デジタルの自然を",
+                "hero-desc": "Linuxのために愛を込めて作られた壁紙マネージャー。<br> ビジュアルで、シンプルで、生き生きとしています。✨",
+                "btn-install": "インストール",
+                "btn-repo": "リポジトリへ",
+                "feat-title": "小さな魔法のディテール",
+                "feat-desc": "自宅にいるような心地よさを。",
+                "card-1-title": "マルチモニター",
+                "card-1-desc": "各画面を完全に制御。雰囲気の異なる壁紙を設定できます。",
+                "card-2-title": "Mini-Nemo",
+                "card-2-desc": "統合されたビジュアルエクスプローラー。選択前に画像をプレビュー。",
+                "card-3-title": "お気に入り",
+                "card-3-desc": "お気に入りのフォルダを保存して、ワンクリックでアクセス。",
+                "install-title": "🌱 コードを植えよう",
+                "install-desc": "コピー、ペースト、そして楽しんで。",
+                "footer-text": '開発者 <span class="text-[#2b5c3a] font-bold">Matías</span> © 2026'
+            }
+        };
+
+        let currentLang = 'es';
+
+        function setLang(lang) {
+            currentLang = lang;
+            
+            // Actualizar botones (estado activo)
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+
+            // Actualizar textos por ID
+            const keys = translations[lang];
+            for (const key in keys) {
+                const el = document.getElementById(key);
+                if (el) el.innerHTML = keys[key];
+            }
+
+            // Actualizar leyenda del slider inmediatamente
+            updateCaption();
+        }
+
         function copyCode() {
             const code = document.getElementById('install-code').innerText;
             const feedback = document.getElementById('copy-feedback');
@@ -299,15 +369,21 @@ python midorigami.py</code></pre>
         const captionEl = document.getElementById('slider-caption');
         let sliderInterval;
 
+        function updateCaption() {
+            const slide = slides[currentSlide];
+            // Obtiene el texto según el idioma actual (data-caption-es, data-caption-en, etc.)
+            const text = slide.getAttribute(`data-caption-${currentLang}`);
+            captionEl.textContent = text;
+        }
+
         function updateSlider() {
             slides.forEach((slide, index) => {
                 if (index === currentSlide) {
                     slide.classList.remove('opacity-0', 'z-0');
                     slide.classList.add('opacity-100', 'z-10');
-                    // Actualizar Caption
                     captionEl.style.opacity = '0';
                     setTimeout(() => {
-                        captionEl.textContent = slide.getAttribute('data-caption');
+                        updateCaption();
                         captionEl.style.opacity = '1';
                     }, 300);
                 } else {
@@ -316,7 +392,6 @@ python midorigami.py</code></pre>
                 }
             });
 
-            // Actualizar puntos
             dots.forEach((dot, index) => {
                 if (index === currentSlide) {
                     dot.classList.remove('bg-white/50', 'w-2', 'hover:w-4');
@@ -344,10 +419,9 @@ python midorigami.py</code></pre>
 
         function resetTimer() {
             clearInterval(sliderInterval);
-            sliderInterval = setInterval(() => changeSlide(1), 5000); // Cambio cada 5s
+            sliderInterval = setInterval(() => changeSlide(1), 5000);
         }
 
-        // Iniciar Slider
         resetTimer();
 
         /* --- SISTEMA DE HOJAS FLOTANTES --- */
