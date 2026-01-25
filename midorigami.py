@@ -19,11 +19,14 @@ ctk.set_default_color_theme("green")
 HOME = os.path.expanduser("~")
 CONFIG_FILE = os.path.join(HOME, ".midorigami_config.json")
 FAVORITES_FILE = os.path.join(HOME, ".midorigami_favs.json")
-# Ya no dependemos de .fehbg para el arranque, pero lo guardamos por compatibilidad
+# Mantenemos .fehbg por compatibilidad con gestores ligeros
 FEHBG_FILE = os.path.join(HOME, ".fehbg") 
 
 AUTOSTART_DIR = os.path.join(HOME, ".config", "autostart")
 AUTOSTART_FILE = os.path.join(AUTOSTART_DIR, "midorigami.desktop")
+
+# Extensiones permitidas
+IMAGE_EXT = ('.png', '.jpg', '.jpeg', '.bmp', '.webp')
 
 # --- DICCIONARIO DE IDIOMAS ---
 TRANSLATIONS = {
@@ -127,6 +130,72 @@ CURRENT_LANG = "es"
 def tr(key):
     return TRANSLATIONS.get(CURRENT_LANG, TRANSLATIONS["es"]).get(key, key)
 
+# --- NUEVO: DETECTOR DE ENTORNO DE ESCRITORIO ---
+def get_desktop_environment():
+    """Detecta qué escritorio usa el usuario para aplicar el comando correcto"""
+    desktop_session = os.environ.get("DESKTOP_SESSION", "").lower()
+    xdg_desktop = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+    
+    if "xfce" in desktop_session or "xfce" in xdg_desktop:
+        return "xfce"
+    if "zorin" in desktop_session or "gnome" in desktop_session or "gnome" in xdg_desktop or "ubuntu" in desktop_session:
+        return "gnome"
+    if "cinnamon" in desktop_session or "cinnamon" in xdg_desktop:
+        return "cinnamon"
+    if "mate" in desktop_session or "mate" in xdg_desktop:
+        return "mate"
+    return "unknown"
+
+# --- NUEVO: APLICADOR NATIVO UNIVERSAL ---
+def apply_background_native(image_list):
+    """
+    Aplica el fondo usando el comando nativo del sistema operativo.
+    Esto arregla el problema en Zorin y Xubuntu.
+    """
+    if not image_list:
+        return
+
+    de = get_desktop_environment()
+    # Tomamos la primera imagen como principal (limitación de algunos DEs sin plugins)
+    primary_img = image_list[0]
+    uri = "file://" + primary_img
+    
+    print(f"🖥️ Entorno detectado: {de}")
+    print(f"🖼️ Aplicando: {primary_img}")
+
+    try:
+        if de == "gnome":
+            # Zorin OS / GNOME: Requiere URI y soporta modo claro/oscuro
+            subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri])
+            subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", uri])
+            subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-options", "zoom"])
+            
+        elif de == "cinnamon":
+            # Linux Mint Cinnamon
+            subprocess.run(["gsettings", "set", "org.cinnamon.desktop.background", "picture-uri", uri])
+            subprocess.run(["gsettings", "set", "org.cinnamon.desktop.background", "picture-options", "zoom"])
+            
+        elif de == "xfce":
+            # Xubuntu (XFCE4) - Iterar propiedades
+            try:
+                output = subprocess.check_output(["xfconf-query", "-c", "xfce4-desktop", "-l"]).decode("utf-8")
+                props = output.splitlines()
+                for prop in props:
+                    if "last-image" in prop or "image-path" in prop:
+                        subprocess.run(["xfconf-query", "-c", "xfce4-desktop", "-p", prop, "-s", primary_img])
+            except Exception as e:
+                print(f"Error XFCE: {e}")
+                
+        elif de == "mate":
+            # MATE Desktop
+            subprocess.run(["gsettings", "set", "org.mate.background", "picture-filename", primary_img])
+            
+        # SIEMPRE ejecutamos feh como respaldo
+        subprocess.run(["feh", "--bg-fill"] + image_list)
+        
+    except Exception as e:
+        print(f"Error aplicando fondo nativo: {e}")
+
 # --- MODO RESTAURACIÓN (SILENT MODE) ---
 def run_restore_mode():
     """
@@ -152,44 +221,38 @@ def run_restore_mode():
         print("⚠️ No hay wallpapers definidos en la config.")
         return
 
-    # 2. Detectar monitores
-    try:
-        monitors = screeninfo.get_monitors()
-    except:
-        print("⚠️ No se pudieron detectar monitores con screeninfo, usando orden por defecto.")
-        # Si falla, ordenamos por keys del diccionario
-        monitors_list = list(wallpapers.values())
-    else:
-        # Mapear monitores a imágenes
-        monitors_list = []
-        for m in monitors:
-            img = wallpapers.get(m.name)
-            if img:
-                monitors_list.append(img)
-            else:
-                print(f"⚠️ No hay imagen para {m.name}")
-
-    if not monitors_list:
-        return
-
-    # 3. Construir comando feh
-    command = ["feh", "--bg-fill"] + monitors_list
+    # 2. Detectar monitores (Intentos múltiples)
+    monitors_list = []
     
-    # 4. CICLO DE PERSISTENCIA (El truco para ganarle a Linux Mint)
+    # Intentos de persistencia (El truco para ganarle a Linux Mint/Zorin)
     # Intentamos aplicar el fondo varias veces para asegurarnos de que quede encima
-    delays = [2, 5, 10] # Segundos a esperar
+    delays = [2, 5, 10] 
     
     for delay in delays:
         print(f"⏳ Esperando {delay} segundos...")
         time.sleep(delay)
         print("🎨 Aplicando wallpapers...")
+        
         try:
-            # Definir DISPLAY para asegurarse que apunte a la pantalla gráfica
-            env = os.environ.copy()
-            env["DISPLAY"] = ":0"
-            subprocess.run(command, env=env)
+            # Reintentar obtener monitores en cada iteración
+            try:
+                monitors = screeninfo.get_monitors()
+                # Reconstruir lista de imágenes
+                images = []
+                for m in monitors:
+                    path = wallpapers.get(m.name)
+                    if path:
+                        images.append(path)
+                
+                # Usar el aplicador nativo
+                if images:
+                    apply_background_native(images)
+            except:
+                # Fallback si falla screeninfo
+                pass
+                
         except Exception as e:
-            print(f"❌ Falló feh: {e}")
+            print(f"❌ Error en ciclo restore: {e}")
 
     print("✅ Restauración completada. MidoriGami se cierra.")
     sys.exit(0)
@@ -268,23 +331,31 @@ class WallpaperPicker(ctk.CTkToplevel):
         self.after(100, self.safe_grab_set)
 
     def safe_grab_set(self):
-        try: self.lift(); self.grab_set()
-        except: pass
+        try:
+            self.lift()
+            self.grab_set()
+        except:
+            pass
 
     def load_favorites(self):
         if os.path.exists(FAVORITES_FILE):
             try:
-                with open(FAVORITES_FILE, 'r') as f: return json.load(f)
-            except: pass
+                with open(FAVORITES_FILE, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
         return [os.path.expanduser("~"), os.path.expanduser("~/Imágenes")]
 
     def save_favorites(self):
         try:
-            with open(FAVORITES_FILE, 'w') as f: json.dump(self.favorites, f)
-        except: pass
+            with open(FAVORITES_FILE, 'w') as f:
+                json.dump(self.favorites, f)
+        except:
+            pass
 
     def load_favorites_ui(self):
-        for widget in self.fav_scroll.winfo_children(): widget.destroy()
+        for widget in self.fav_scroll.winfo_children():
+            widget.destroy()
         for path in self.favorites:
             name = "Home 🏠" if path == os.path.expanduser("~") else os.path.basename(path) or path
             frame = ctk.CTkFrame(self.fav_scroll, fg_color="transparent")
@@ -294,23 +365,33 @@ class WallpaperPicker(ctk.CTkToplevel):
 
     def add_current_to_favs(self):
         if self.current_dir not in self.favorites:
-            self.favorites.append(self.current_dir); self.save_favorites(); self.load_favorites_ui()
+            self.favorites.append(self.current_dir)
+            self.save_favorites()
+            self.load_favorites_ui()
 
     def remove_fav(self, path):
         if path in self.favorites:
-            self.favorites.remove(path); self.save_favorites(); self.load_favorites_ui()
+            self.favorites.remove(path)
+            self.save_favorites()
+            self.load_favorites_ui()
 
     def change_dir(self, new_path):
-        if os.path.isdir(new_path): self.current_dir = new_path; self.load_directory()
+        if os.path.isdir(new_path):
+            self.current_dir = new_path
+            self.load_directory()
 
     def load_directory(self):
-        for widget in self.file_scroll.winfo_children(): widget.destroy()
+        for widget in self.file_scroll.winfo_children():
+            widget.destroy()
         self.path_label.configure(text=f"{self.current_dir}")
-        try: items = sorted(os.listdir(self.current_dir))
-        except: self.go_up(); return
+        try:
+            items = sorted(os.listdir(self.current_dir))
+        except:
+            self.go_up()
+            return
 
         folders = [i for i in items if os.path.isdir(os.path.join(self.current_dir, i)) and not i.startswith('.')]
-        images = [i for i in items if i.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp'))]
+        images = [i for i in items if i.lower().endswith(IMAGE_EXT)]
 
         for f in folders:
             ctk.CTkButton(self.file_scroll, text=f"📁 {f}", fg_color="transparent", anchor="w", command=lambda p=f: self.enter_folder(p)).pack(fill="x", pady=2)
@@ -318,8 +399,7 @@ class WallpaperPicker(ctk.CTkToplevel):
             ctk.CTkButton(self.file_scroll, text=f"🖼️ {img}", fg_color=("gray85", "gray25"), anchor="w", command=lambda p=img: self.preview_image(p)).pack(fill="x", pady=2)
 
     def go_up(self):
-        p = os.path.dirname(self.current_dir)
-        if p != self.current_dir: self.change_dir(p)
+        self.change_dir(os.path.dirname(self.current_dir))
 
     def enter_folder(self, folder_name):
         self.change_dir(os.path.join(self.current_dir, folder_name))
@@ -331,15 +411,22 @@ class WallpaperPicker(ctk.CTkToplevel):
             self.select_btn.configure(state="normal")
         try:
             img = Image.open(full_path)
-            max_w, max_h = self.preview_frame.winfo_width()-20, self.preview_frame.winfo_height()-20
-            if max_w < 10: max_w, max_h = 400, 400
+            max_w = self.preview_frame.winfo_width() - 20
+            max_h = self.preview_frame.winfo_height() - 20
+            if max_w < 10: max_w = 400
+            if max_h < 10: max_h = 400
+            
             img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
             self.preview_label.configure(image=ctk.CTkImage(img, img, size=img.size), text="")
-        except: pass
+        except:
+            pass
 
     def confirm_selection(self):
-        if self.folder_mode: self.on_select(self.current_dir); self.destroy()
-        elif self.selected_file: self.on_select(self.selected_file); self.destroy()
+        if self.folder_mode:
+            self.on_select(self.current_dir)
+        elif self.selected_file:
+            self.on_select(self.selected_file)
+        self.destroy()
 
 
 class MonitorFrame(ctk.CTkFrame):
@@ -352,7 +439,6 @@ class MonitorFrame(ctk.CTkFrame):
         self.selected_image_path = initial_image 
 
         self.grid_columnconfigure(0, weight=1)
-
         self.label = ctk.CTkLabel(self, text="", font=("Roboto", 12, "bold")) 
         self.label.grid(row=0, column=0, pady=5, padx=5)
 
@@ -363,7 +449,8 @@ class MonitorFrame(ctk.CTkFrame):
         self.preview_btn.grid(row=1, column=0, pady=10, padx=10, sticky="ew")
 
         self.update_texts() 
-        if self.selected_image_path: self.update_preview(self.selected_image_path)
+        if self.selected_image_path:
+            self.update_preview(self.selected_image_path)
 
     def update_texts(self):
         self.label.configure(text=f"{tr('monitor')} {self.index + 1}: {self.monitor_name}\n({self.resolution})")
@@ -371,9 +458,7 @@ class MonitorFrame(ctk.CTkFrame):
             self.preview_btn.configure(text=tr("explore_btn"))
 
     def open_custom_picker(self):
-        start_dir = os.path.expanduser("~")
-        if self.selected_image_path: start_dir = os.path.dirname(self.selected_image_path)
-        elif self.app.global_default_dir: start_dir = self.app.global_default_dir
+        start_dir = os.path.dirname(self.selected_image_path) if self.selected_image_path else os.path.expanduser("~")
         WallpaperPicker(self.winfo_toplevel(), start_dir, self.on_image_selected)
 
     def on_image_selected(self, file_path):
@@ -387,56 +472,63 @@ class MonitorFrame(ctk.CTkFrame):
             ratio = img.width / img.height
             ctk_img = ctk.CTkImage(img, img, size=(int(140*ratio), 140))
             self.preview_btn.configure(image=ctk_img, text="") 
-        except: self.preview_btn.configure(text="Error")
+        except:
+            self.preview_btn.configure(text="Error")
+
 
 class MidoriGamiApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        global CURRENT_LANG
         self.config_data = self.load_config()
         
         saved_lang = self.config_data.get("language")
-        if saved_lang in TRANSLATIONS: CURRENT_LANG = saved_lang
+        if saved_lang in TRANSLATIONS:
+            CURRENT_LANG = saved_lang
         else:
             sys_lang = locale.getdefaultlocale()[0]
-            if sys_lang and sys_lang.startswith('ja'): CURRENT_LANG = 'ja'
-            elif sys_lang and sys_lang.startswith('es'): CURRENT_LANG = 'es'
-            else: CURRENT_LANG = 'en'
+            if sys_lang and sys_lang.startswith('ja'):
+                CURRENT_LANG = 'ja'
+            elif sys_lang and sys_lang.startswith('es'):
+                CURRENT_LANG = 'es'
+            else:
+                CURRENT_LANG = 'en'
 
-        self.geometry("1100x750")
-        self.global_default_dir = None 
-        
-        self.sidebar_icon = None
-        try:
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            icon_path = os.path.join(script_dir, "icono.png")
-            pil_img = Image.open(icon_path)
-            self.wm_iconphoto(False, ImageTk.PhotoImage(pil_img.resize((128,128), Image.Resampling.LANCZOS)))
-            self.sidebar_icon = ctk.CTkImage(pil_img, pil_img, size=(100, 100))
-        except: pass
-
-        self.favorites = self.load_favorites() 
+        self.title(tr("window_title"))
+        self.geometry("1000x700")
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        self.sidebar = ctk.CTkFrame(self, width=260, corner_radius=0) 
+        # Sidebar
+        self.sidebar = ctk.CTkFrame(self, width=250, corner_radius=0)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
-        self.sidebar.grid_rowconfigure(1, weight=1) 
+        self.sidebar.grid_rowconfigure(1, weight=1)
 
         self.header_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
         self.header_frame.grid(row=0, column=0, sticky="ew", pady=(30, 10))
+        
+        self.sidebar_icon = None
+        try:
+            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icono.png")
+            pil_img = Image.open(icon_path)
+            self.wm_iconphoto(False, ImageTk.PhotoImage(pil_img.resize((128,128), Image.Resampling.LANCZOS)))
+            self.sidebar_icon = ctk.CTkImage(pil_img, pil_img, size=(100, 100))
+        except:
+            pass
+
         self.logo_label = ctk.CTkLabel(self.header_frame, text=" MidoriGami 🌿\n 緑紙", image=self.sidebar_icon, compound="top", font=("Roboto", 24, "bold"))
         self.logo_label.pack()
         self.subtitle_label = ctk.CTkLabel(self.header_frame, text="", font=("Roboto", 12), text_color="gray")
         self.subtitle_label.pack()
 
+        # Paths
         self.paths_frame = ctk.CTkScrollableFrame(self.sidebar, label_text="")
         self.paths_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=10)
         
         self.add_path_btn = ctk.CTkButton(self.sidebar, text="", command=self.add_manual_path, fg_color="transparent", border_width=1, font=("Roboto", 11))
         self.add_path_btn.grid(row=2, column=0, padx=20, pady=(0, 10))
 
+        # Footer
         self.footer_frame = ctk.CTkFrame(self.sidebar, fg_color="transparent")
         self.footer_frame.grid(row=3, column=0, sticky="ew", pady=20)
 
@@ -445,7 +537,6 @@ class MidoriGamiApp(ctk.CTk):
 
         self.autostart_switch = ctk.CTkSwitch(self.footer_frame, text="", command=self.toggle_autostart)
         self.autostart_switch.pack(pady=5)
-        # Check if already enabled
         if os.path.exists(AUTOSTART_FILE):
             self.autostart_switch.select()
 
@@ -466,6 +557,7 @@ class MidoriGamiApp(ctk.CTk):
         self.credits_label = ctk.CTkLabel(self.footer_frame, text="", font=("Roboto", 10), text_color="gray")
         self.credits_label.pack()
 
+        # Area Principal
         self.main_area = ctk.CTkScrollableFrame(self, label_text="")
         self.main_area.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
 
@@ -475,63 +567,7 @@ class MidoriGamiApp(ctk.CTk):
         self.load_sidebar_paths() 
         self.load_monitors()
 
-    # --- DEFINICIÓN DE MÉTODOS DE LA CLASE APP ---
-    def load_favorites(self):
-        if os.path.exists(FAVORITES_FILE):
-            try:
-                with open(FAVORITES_FILE, 'r') as f: return json.load(f)
-            except: pass
-        return [os.path.expanduser("~"), os.path.expanduser("~/Imágenes")]
-
-    def save_favorites(self):
-        try:
-            with open(FAVORITES_FILE, 'w') as f: json.dump(self.favorites, f)
-        except: pass
-
-    # --- AUTOSTART LOGIC ---
-    def toggle_autostart(self):
-        if self.autostart_switch.get() == 1:
-            self.create_autostart_file()
-        else:
-            self.remove_autostart_file()
-
-    def create_autostart_file(self):
-        if not os.path.exists(AUTOSTART_DIR):
-            try: os.makedirs(AUTOSTART_DIR)
-            except: return
-
-        # AQUI ESTA EL CAMBIO CLAVE:
-        # En lugar de ejecutar 'sh .fehbg', ejecutamos 'python3 midorigami.py --restore'
-        # Usamos la ruta absoluta del intérprete de python y del script actual.
-        
-        python_exe = sys.executable # /usr/bin/python3 o ruta del venv
-        script_path = os.path.abspath(__file__) # ruta/a/midorigami.py
-        
-        # El comando ejecuta MidoriGami en modo restore
-        command = f'{python_exe} "{script_path}" --restore'
-        
-        content = f"""[Desktop Entry]
-Type=Application
-Name=MidoriGami Restore
-Comment=Restaura fondos de pantalla via Python
-Exec={command}
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-X-GNOME-Autostart-Delay=5
-"""
-        try:
-            with open(AUTOSTART_FILE, "w") as f:
-                f.write(content)
-        except Exception as e:
-            print(f"Error autostart: {e}")
-
-    def remove_autostart_file(self):
-        if os.path.exists(AUTOSTART_FILE):
-            try: os.remove(AUTOSTART_FILE)
-            except: pass
-
-    # --- RESTO DE FUNCIONES ---
+    # MÉTODOS
     def get_lang_display_name(self, code):
         if code == 'es': return "Español"
         if code == 'ja': return "日本語"
@@ -560,8 +596,21 @@ X-GNOME-Autostart-Delay=5
 
     def load_sidebar_paths(self):
         for widget in self.paths_frame.winfo_children(): widget.destroy()
-        for path in self.favorites:
-            name = "Home" if path == os.path.expanduser("~") else os.path.basename(path)
+        
+        # Cargar favoritos (SINTAXIS SEGURA)
+        favs = []
+        if os.path.exists(FAVORITES_FILE):
+            try:
+                with open(FAVORITES_FILE, 'r') as f:
+                    favs = json.load(f)
+            except:
+                pass
+        
+        if not favs:
+            favs = [os.path.expanduser("~")]
+
+        for path in favs:
+            name = "Home" if path == os.path.expanduser("~") else os.path.basename(path) or path
             ctk.CTkButton(
                 self.paths_frame, text=f"📂 {name}", fg_color="transparent", border_width=1, anchor="w",
                 command=lambda p=path: self.set_global_path(p)
@@ -569,6 +618,7 @@ X-GNOME-Autostart-Delay=5
 
     def set_global_path(self, path):
         self.global_default_dir = path
+        # Mensaje centrado
         CTkMessagebox(master=self, title=tr("msg_path_title"), message=tr("msg_path_body").format(path), icon="info")
 
     def add_manual_path(self):
@@ -576,12 +626,15 @@ X-GNOME-Autostart-Delay=5
 
     def on_folder_selected(self, path):
         if path and path not in self.favorites:
-            self.favorites.append(path); self.save_favorites(); self.load_sidebar_paths()
+            self.favorites.append(path)
+            self.save_favorites()
+            self.load_sidebar_paths()
 
     def load_config(self):
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, 'r') as f: return json.load(f)
+                with open(CONFIG_FILE, 'r') as f:
+                    return json.load(f)
             except: pass
         return {}
 
@@ -614,41 +667,67 @@ X-GNOME-Autostart-Delay=5
         else:
             ctk.set_appearance_mode("Light"); self.theme_switch.configure(text=tr("light_mode"))
 
-    def apply_wallpapers(self):
-        command = ["feh", "--bg-fill"]
-        images_args = []
-        missing = []
-        for frame in self.monitor_frames:
-            if frame.selected_image_path: images_args.append(frame.selected_image_path)
-            else: missing.append(frame.monitor_name)
+    def toggle_autostart(self):
+        if self.autostart_switch.get() == 1:
+            self.create_autostart_file()
+        else:
+            self.remove_autostart_file()
 
-        if missing:
-            CTkMessagebox(master=self, title=tr("msg_missing_title"), message=tr("msg_missing_body").format(', '.join(missing)), icon="cancel")
-            return
-
+    def create_autostart_file(self):
+        if not os.path.exists(AUTOSTART_DIR):
+            try: os.makedirs(AUTOSTART_DIR)
+            except: return
+        
+        python_exe = sys.executable
+        script_path = os.path.abspath(__file__)
+        command = f'{python_exe} "{script_path}" --restore'
+        
+        content = f"""[Desktop Entry]
+Type=Application
+Name=MidoriGami Restore
+Exec={command}
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=5
+"""
         try:
-            subprocess.run(command + images_args)
-            # También actualizamos fehbg por si acaso
-            with open(FEHBG_FILE, "w") as f: 
-                f.write("#!/bin/sh\n" + " ".join(command + images_args) + "\n")
+            with open(AUTOSTART_FILE, "w") as f:
+                f.write(content)
+        except:
+            pass
+
+    def remove_autostart_file(self):
+        if os.path.exists(AUTOSTART_FILE):
+            try: os.remove(AUTOSTART_FILE)
+            except: pass
+
+    def apply_wallpapers(self):
+        images = []
+        monitor_map = {}
+        for f in self.monitor_frames:
+            if f.selected_image_path:
+                images.append(f.selected_image_path)
+                monitor_map[f.monitor_name] = f.selected_image_path
+            else:
+                CTkMessagebox(master=self, title=tr("msg_missing_title"), message=tr("msg_missing_body").format(f.monitor_name), icon="cancel")
+                return
+
+        # Aplicación nativa universal
+        apply_background_native(images)
+        
+        # Guardar config
+        self.config_data["wallpapers"] = monitor_map
+        self.save_config_wallpapers()
+        
+        if self.autostart_switch.get() == 1:
+            self.create_autostart_file()
             
-            os.chmod(FEHBG_FILE, 0o755)
-            self.save_config_wallpapers()
-            
-            # RE-CREAR AUTOSTART SI ESTÁ ACTIVO
-            if self.autostart_switch.get() == 1:
-                self.create_autostart_file()
-            
-            CTkMessagebox(master=self, title=tr("msg_success_title"), message=tr("msg_success_body"), icon="check")
-        except Exception as e:
-            CTkMessagebox(master=self, title=tr("msg_error_title"), message=str(e), icon="cancel")
+        CTkMessagebox(master=self, title=tr("msg_success_title"), message=tr("msg_success_body"), icon="check")
 
 if __name__ == "__main__":
-    # --- PUNTO DE ENTRADA DEL PROGRAMA ---
-    # Revisamos si se ejecutó con el argumento --restore
     if "--restore" in sys.argv:
         run_restore_mode()
     else:
-        # Si no, abrimos la interfaz gráfica normal
         app = MidoriGamiApp()
         app.mainloop()
